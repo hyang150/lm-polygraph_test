@@ -1,23 +1,18 @@
 # Hydra 全局配置
 hydra:
   run:
-    # 输出路径根据 cache_path、task、模型名称（这里使用 model_name 变量，你可以自行定义）、
-    # 数据集名称以及当前时间构造
     dir: ${cache_path}/${task}/${model_name}/${dataset_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 defaults:
-  - model: default_model      # 默认模型覆盖项，可以根据需要调整或覆盖
   - estimators: default_estimators
   - stat_calculators: default_calculators
   - _self_
 
-# 全局路径和任务设置
 cache_path: ./workdir/output
 save_path: '${hydra:run.dir}'
 
 task: qa
 
-# 数据集设置
 dataset: ['LM-Polygraph/mmlu', 'continuation']
 
 text_column: input
@@ -29,37 +24,33 @@ eval_split: test
 size: 10000
 subsample_eval_dataset: -1
 
-# 模型配置：更新为 llama3.1 8B 模型
+# 模型配置：使用 Llama 3.1 8B 模型
 model:
-  path: "meta-llama/Llama-3.1-8B"  # 指定 llama3.1 8B 模型的路径，请确保该模型已经下载或可访问
-  device_map: "cuda:0"            # 如有 GPU 使用 cuda:0，否则改为 "cpu"
+  path: "meta-llama/Llama-3.1-8B"  # 模型路径，请根据实际情况更新
+  device_map: "cuda:0"             # 有 GPU 则使用 "cuda:0"，否则 "cpu"
 
-# 如果你打算直接用 CSV 数据集进行评估，可以启用下面的配置
+# 可选：若使用 CSV 作为数据集评估，请开启下面的配置
 eval_dataset:
   _target_: lm_polygraph.datasets.CSVDataset
-  path: "/workspace/test/lm-polygraph_test/all_true_false_combined.csv"  # 请修改为实际的 CSV 文件路径
+  path: "/workspace/test/lm-polygraph_test/all_true_false_combined.csv"  # CSV 文件的完整路径
   input_key: "statement"
   reference_key: "label"
 
-# 不确定性估计方法配置
 uncertainty_estimators:
   - name: "mean_pointwise_mutual_information"
   - name: "perplexity"
   - name: "mean_token_entropy"
   - name: "max_token_entropy"
 
-# 生成终止条件
 generation_params:
   generate_until:
     - "\n"
 
-# 生成参数配置
 generation:
   do_sample: false
   num_beams: 1
   temperature: 1.0
 
-# 生成文本的最大 token 数，根据任务需要进行调整
 max_new_tokens: 64
 
 generation_metrics: null
@@ -68,6 +59,5 @@ ignore_exceptions: false
 batch_size: 8
 load_from_disk: false
 
-# 随机种子设置，确保实验可重复性
 seed:
   - 1
