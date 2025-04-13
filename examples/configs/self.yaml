@@ -12,12 +12,13 @@ cache_path: ./workdir/output
 save_path: '${hydra:run.dir}'
 instruct: false
 task: qa
+# 注意：将 dataset 字段设置为 csv 以使用本地自定义 CSV 处理逻辑
 dataset: csv
 
 # 定义模型名称变量，用于路径插值
 model_name: Llama-3.1-8B
 
-# CSV 数据集参数（仅用于记录，可供后续使用）
+# CSV 数据集相关参数（仅作为记录，实际加载时由 eval_dataset 指定）
 text_column: statement
 label_column: label
 eval_split: test
@@ -37,10 +38,9 @@ model:
 # ========== CSV 数据集配置 ==========
 eval_dataset:
   _target_: lm_polygraph.datasets.CSVDataset
-  # 使用 data_files 指定测试集对应的文件路径，
-  # 这样 Hugging Face datasets 只会加载该 CSV 文件，不会扫描其他文件。
-  data_files:
-    test: "/workspace/lm-polygraph_test/all_true_false_combined.csv"
+  # 使用 data_files 显式指定 CSV 文件的绝对路径，
+  # 这样 datasets.load_dataset 只会加载该文件而不会扫描目录下的其它 CSV 文件（如 polygraph_eval.log）。
+  data_files: "/workspace/lm-polygraph_test/all_true_false_combined.csv"
   input_key: statement
   reference_key: label
 
