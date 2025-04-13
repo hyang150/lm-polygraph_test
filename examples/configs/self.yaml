@@ -1,51 +1,60 @@
 # ========== Hydra 全局配置 ==========
 hydra:
   run:
-    # 这里为了简单，直接将输出目录设置到 outputs 下，
-    # 如果想根据任务、日期等动态生成目录，可以引入相应变量
-    dir: ./workspace/lm-polygraph_test//outputs
+    dir: ${cache_path}/${task}/${model_name}/${dataset_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 defaults:
-  # 如果你在别处定义了 default_estimators、default_calculators，可保留，否则移除
   - estimators: default_estimators
   - stat_calculators: default_calculators
   - _self_
 
-# ========== 通用设置 ==========
-task: qa
+# 定义插值变量
+model_name: Llama-3.1-8B
+dataset_name: csv_dataset
+
 cache_path: ./workdir/output
 save_path: ${hydra.run.dir}
+
+task: qa
+
+# 顶层 dataset 字段，确保 args.dataset 存在
+dataset: csv
+
+# 定义 CSV 数据集中的文本和标签列（必须与 CSV 文件中一致）
+text_column: statement
+label_column: label
+
+# 评估集划分，评估时只需定义 eval_split
+eval_split: test
+
 batch_size: 8
 load_from_disk: false
 ignore_exceptions: false
-
-# 这里如果你想一次性跑多个 seed，可以用列表写法，也可以写成单个数字
 seed:
   - 1
 
 # ========== 模型配置 ==========
 model:
-  # 指向你本地模型文件夹，确保内部含有 config.json、pytorch_model.bin 等文件
   path: "/workspace/lm-polygraph_test/Llama-3.1-8B"
-  # 如果有 GPU，则可用 cuda:0，若没有 GPU 就改为 "cpu"
-  device_map: "cuda:0"
+  load_model_args:
+    device_map: "cuda:0"
 
-# ========== (可选) 评估数据集配置 ==========
-# 如果你要直接从 CSV 中读取数据评估，则保留；若不需要，可移除
+# ========== CSV 数据集配置 ==========
 eval_dataset:
   _target_: lm_polygraph.datasets.CSVDataset
+  # 请确保这里的路径是你 CSV 文件的绝对路径
   path: "/workspace/lm-polygraph_test/all_true_false_combined.csv"
-  input_key: "statement"
-  reference_key: "label"
+  input_key: statement
+  reference_key: label
 
-# ========== 不确定性估计相关配置 (可选) ==========
+# ========== 不确定性估计 ==========
 uncertainty_estimators:
   - name: "mean_pointwise_mutual_information"
   - name: "perplexity"
   - name: "mean_token_entropy"
   - name: "max_token_entropy"
 
-# ========== 生成相关配置 (可选) ==========
+# ========== 生成相关配置 ==========
 generation_params:
   generate_until:
     - "\n"
@@ -56,4 +65,5 @@ generation:
   temperature: 1.0
 
 max_new_tokens: 64
+
 generation_metrics: null
