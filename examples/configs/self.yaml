@@ -1,47 +1,51 @@
-# Hydra 全局配置
+# ========== Hydra 全局配置 ==========
 hydra:
   run:
-    dir: ${cache_path}/${task}/${model_name}/${dataset_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    # 这里为了简单，直接将输出目录设置到 outputs 下，
+    # 如果想根据任务、日期等动态生成目录，可以引入相应变量
+    dir: ./workspace/lm-polygraph_test//outputs
 
 defaults:
+  # 如果你在别处定义了 default_estimators、default_calculators，可保留，否则移除
   - estimators: default_estimators
   - stat_calculators: default_calculators
   - _self_
 
-cache_path: ./workdir/output
-save_path: '${hydra:run.dir}'
-
+# ========== 通用设置 ==========
 task: qa
+cache_path: ./workdir/output
+save_path: ${hydra.run.dir}
+batch_size: 8
+load_from_disk: false
+ignore_exceptions: false
 
-dataset: ['LM-Polygraph/mmlu', 'continuation']
+# 这里如果你想一次性跑多个 seed，可以用列表写法，也可以写成单个数字
+seed:
+  - 1
 
-text_column: input
-label_column: output
-
-train_split: train
-eval_split: test
-
-size: 10000
-subsample_eval_dataset: -1
-
-# 模型配置：使用 Llama 3.1 8B 模型
+# ========== 模型配置 ==========
 model:
-  path: "meta-llama/Llama-3.1-8B"  # 模型路径，请根据实际情况更新
-  device_map: "cuda:0"             # 有 GPU 则使用 "cuda:0"，否则 "cpu"
+  # 指向你本地模型文件夹，确保内部含有 config.json、pytorch_model.bin 等文件
+  path: "/workspace/lm-polygraph_test/Llama-3.1-8B"
+  # 如果有 GPU，则可用 cuda:0，若没有 GPU 就改为 "cpu"
+  device_map: "cuda:0"
 
-# 可选：若使用 CSV 作为数据集评估，请开启下面的配置
+# ========== (可选) 评估数据集配置 ==========
+# 如果你要直接从 CSV 中读取数据评估，则保留；若不需要，可移除
 eval_dataset:
   _target_: lm_polygraph.datasets.CSVDataset
-  path: "/workspace/test/lm-polygraph_test/all_true_false_combined.csv"  # CSV 文件的完整路径
+  path: "/workspace/lm-polygraph_test/all_true_false_combined.csv"
   input_key: "statement"
   reference_key: "label"
 
+# ========== 不确定性估计相关配置 (可选) ==========
 uncertainty_estimators:
   - name: "mean_pointwise_mutual_information"
   - name: "perplexity"
   - name: "mean_token_entropy"
   - name: "max_token_entropy"
 
+# ========== 生成相关配置 (可选) ==========
 generation_params:
   generate_until:
     - "\n"
@@ -52,12 +56,4 @@ generation:
   temperature: 1.0
 
 max_new_tokens: 64
-
 generation_metrics: null
-
-ignore_exceptions: false
-batch_size: 8
-load_from_disk: false
-
-seed:
-  - 1
