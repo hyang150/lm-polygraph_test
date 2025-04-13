@@ -1,12 +1,12 @@
 # Hydra 全局配置
 hydra:
   run:
-    # 输出路径根据 cache_path、task、模型名称、数据集名称以及当前时间构造
+    # 输出路径根据 cache_path、task、模型名称（这里使用 model_name 变量，你可以自行定义）、
+    # 数据集名称以及当前时间构造
     dir: ${cache_path}/${task}/${model_name}/${dataset_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
-# 默认配置的引用，可以在运行时通过 Hydra 选择不同配置覆盖项
 defaults:
-  - model: default_model      # 默认模型配置（你可以创建 bloomz-560m 或其他的配置文件并指定）
+  - model: default_model      # 默认模型覆盖项，可以根据需要调整或覆盖
   - estimators: default_estimators
   - stat_calculators: default_calculators
   - _self_
@@ -17,69 +17,57 @@ save_path: '${hydra:run.dir}'
 
 task: qa
 
-# 数据集设置：
-# 如果你使用的是内置数据集，可指定列表（例如 'LM-Polygraph/mmlu'、'continuation'）
-# 如果使用 CSV 数据集评估，请配置 eval_dataset 部分，或在 defaults 中覆盖选择相应配置
+# 数据集设置
 dataset: ['LM-Polygraph/mmlu', 'continuation']
 
-# 针对问答任务的文本与标签字段定义
 text_column: input
 label_column: output
 
-# 训练和评估数据切分（仅当需要划分数据集时使用）
 train_split: train
 eval_split: test
 
-# 数据样本数量（可根据需要裁剪数据集）
 size: 10000
 subsample_eval_dataset: -1
 
-# 模型配置
+# 模型配置：更新为 llama3.1 8B 模型
 model:
-  # 指定模型的具体路径，可以根据需要选择不同的模型，如 bloomz-560m 或 llama
-  # 示例中使用 Llama 3 8B 模型，如需使用 bloomz-560m，请修改 path 字段
-  path: "meta-llama/Llama-3-8B"
-  # 指定设备映射，如果有 GPU 则使用 cuda:0，否则设置为 "cpu"
-  device_map: "cuda:0"
-  # 如果你需要在模型配置中添加更多参数，可以继续扩展此处
+  path: "meta-llama/Llama-3.1-8B"  # 指定 llama3.1 8B 模型的路径，请确保该模型已经下载或可访问
+  device_map: "cuda:0"            # 如有 GPU 使用 cuda:0，否则改为 "cpu"
 
-# （可选）评估数据集配置：当你希望直接加载 CSV 文件数据时使用
+# 如果你打算直接用 CSV 数据集进行评估，可以启用下面的配置
 eval_dataset:
   _target_: lm_polygraph.datasets.CSVDataset
-  path: "/workspace/test/lm-polygraph_test/all_true_false_combined.csv"  # 请修改为你 CSV 文件的实际路径
+  path: "/workspace/test/lm-polygraph_test/all_true_false_combined.csv"  # 请修改为实际的 CSV 文件路径
   input_key: "statement"
   reference_key: "label"
 
-# 不确定性估计方法配置：根据需要选择或增加其它方法
+# 不确定性估计方法配置
 uncertainty_estimators:
   - name: "mean_pointwise_mutual_information"
   - name: "perplexity"
   - name: "mean_token_entropy"
   - name: "max_token_entropy"
 
-# 生成相关参数
-# generation_params 下的 generate_until 用于定义生成的终止符号
+# 生成终止条件
 generation_params:
   generate_until:
     - "\n"
-# generation 节点提供更详细的生成配置参数，如采样方式、beam 数量和温度等
+
+# 生成参数配置
 generation:
   do_sample: false
   num_beams: 1
   temperature: 1.0
 
-# 设置生成文本的最大 token 数，这里采用示例中的 64，原来你的配置中为 3，根据实际任务调整
+# 生成文本的最大 token 数，根据任务需要进行调整
 max_new_tokens: 64
 
-# 评估指标配置（如果不需要指标计算，可保持 null）
 generation_metrics: null
 
-# 运行时其他配置
 ignore_exceptions: false
-# 设置评估时的批次大小，示例文件中采用 8
 batch_size: 8
 load_from_disk: false
 
-# 随机种子设置，保证实验可重复性
+# 随机种子设置，确保实验可重复性
 seed:
   - 1
