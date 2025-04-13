@@ -1,10 +1,9 @@
 # ========== Hydra 全局配置 ==========
 hydra:
   run:
-    dir: ${cache_path}/${task}/${model}/${dataset}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: ${cache_path}/${task}/${model_name}/${dataset}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 defaults:
-  - model: Llama-3.1-8B
   - estimators: default_estimators
   - stat_calculators: default_calculators
   - _self_
@@ -15,7 +14,10 @@ instruct: false
 task: qa
 dataset: csv_dataset
 
-# CSV 数据集参数（确保与你 CSV 文件中的字段一致）
+# 定义模型名称变量，用于路径插值
+model_name: Llama-3.1-8B
+
+# CSV 数据集参数，确保字段名称与你的 CSV 文件一致
 text_column: statement
 label_column: label
 eval_split: test
@@ -35,7 +37,7 @@ model:
 # ========== CSV 数据集配置 ==========
 eval_dataset:
   _target_: lm_polygraph.datasets.CSVDataset
-  # 请确保这里的路径与实际 CSV 文件路径一致
+  # 请确认这里的 CSV 文件路径是正确且可访问的
   path: "/workspace/lm-polygraph_test/all_true_false_combined.csv"
   input_key: statement
   reference_key: label
