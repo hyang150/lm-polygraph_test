@@ -1,0 +1,29 @@
+# 模型配置
+model:
+  path: "meta-llama/Llama-3-8B"  # Llama 3 8B模型
+  device_map: "cuda:0"  # 如果你有GPU，否则用"cpu"
+
+# 数据集配置
+eval_dataset:
+  _target_: lm_polygraph.datasets.CSVDataset
+  path: "/workspace/test/lm-polygraph_test/all_true_false_combined.csv"  # 你的CSV文件完整路径
+  input_key: "statement"
+  reference_key: "label"
+
+# 不确定性估计方法
+uncertainty_estimators:
+  - name: "mean_pointwise_mutual_information"
+  - name: "perplexity"
+  - name: "mean_token_entropy"
+  - name: "max_token_entropy"
+
+# 评估参数
+batch_size: 8
+max_new_tokens: 64
+generation:
+  do_sample: false
+  num_beams: 1
+  temperature: 1.0
+
+# 结果保存
+save_path: "./results_all_factcheck"
