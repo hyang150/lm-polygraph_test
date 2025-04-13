@@ -12,12 +12,12 @@ cache_path: ./workdir/output
 save_path: '${hydra:run.dir}'
 instruct: false
 task: qa
-dataset: csv_dataset
+dataset: csv
 
 # 定义模型名称变量，用于路径插值
 model_name: Llama-3.1-8B
 
-# CSV 数据集参数，确保字段名称与你的 CSV 文件一致
+# CSV 数据集参数（确保字段名称与你 CSV 文件一致）
 text_column: statement
 label_column: label
 eval_split: test
@@ -37,7 +37,7 @@ model:
 # ========== CSV 数据集配置 ==========
 eval_dataset:
   _target_: lm_polygraph.datasets.CSVDataset
-  # 请确认这里的 CSV 文件路径是正确且可访问的
+  # 请确认 CSV 文件路径正确且文件可读
   path: "/workspace/lm-polygraph_test/all_true_false_combined.csv"
   input_key: statement
   reference_key: label
